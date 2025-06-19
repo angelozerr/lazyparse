@@ -1,0 +1,11 @@
+package {packageName};
+
+public class {className} {
+
+    public void parse() {
+        // Règles extraites de la BNF:
+        {#for rule in grammar.rules}
+        // - {rule}
+        {/for}
+    }
+}

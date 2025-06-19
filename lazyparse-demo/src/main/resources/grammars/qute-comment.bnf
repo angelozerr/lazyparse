@@ -1,0 +1,17 @@
+Template ::= @pushState(WithinContent) (Comment | Expression | Text)* ;
+
+Comment ::= @whenState(WithinContent)  
+			@token(StartComment) "{!" 
+			@pushState(WithinComment)
+			@token(CommentContent) @recoverUntil("!}")
+			@token(EndComment) "!}"
+            @popState ;
+
+Expression ::= @whenState(WithinContent)
+               @token(StartExpression) "{="
+               @pushState(WithinExpression)
+               @token(ExpressionContent) @recoverUntil("}")
+               @token(EndExpression) "}"
+               @popState ;
+                   
+Text ::= @whenState(WithinContent) @token(Content) @recoverUntil("{") ;

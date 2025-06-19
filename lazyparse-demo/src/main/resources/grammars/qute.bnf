@@ -1,0 +1,125 @@
+Template ::= @pushState(WithinContent) (Comment | CDATA | CDATAOld | Expression | ParameterDeclaration | Tag | Text)* ;
+
+# === WithinContent ===
+
+Comment ::= @whenState(WithinContent)
+            StartComment
+            @pushState(WithinComment)
+            CommentContent
+            EndComment
+            @popState ;
+
+StartComment ::= @token(StartComment) "{!" ;
+EndComment   ::= @token(EndComment) "!}" ;
+
+CommentContent ::= @token(Comment)
+                   @recoverUntil("!}");
+
+CDATA ::= @whenState(WithinContent)
+           CDATATagOpen
+           @pushState(WithinCDATA)
+           CDATAContent
+           CDATATagClose
+           @popState ;
+
+CDATATagOpen ::= @token(CDATATagOpen) "{|" ;
+CDATATagClose ::= @token(CDATATagClose) "|}" ;
+
+WithinCDATAContent ::= @token(CDATAContent)
+                      @recoverUntil("|}")
+                      ("|}")* ;
+
+CDATAContent ::= WithinCDATAContent ;
+
+CDATAOld ::= @whenState(WithinContent)
+              CDATAOldTagOpen
+              @pushState(WithinCDATAOld)
+              CDATAContentOld
+              CDATAOldTagClose
+              @popState ;
+
+CDATAOldTagOpen ::= @token(CDATAOldTagOpen) "{[" ;
+CDATAOldTagClose ::= @token(CDATAOldTagClose) "]}" ;
+
+WithinCDATAOldContent ::= @token(CDATAContent)
+                         @recoverUntil("]}")
+                         ("]}")* ;
+
+CDATAContentOld ::= WithinCDATAOldContent ;
+
+Expression ::= @whenState(WithinContent)
+               StartExpression
+               @pushState(WithinExpression)
+               ExpressionContent
+               EndExpression
+               @popState ;
+
+StartExpression ::= @token(StartExpression) "{_" ;  # dans le code c’est '{' puis une autre logique, simplifié ici
+EndExpression   ::= @token(EndExpression) "}" ;
+
+ExpressionContent ::= @token(ExpressionContent)
+                     @recoverUntil("}")
+                     ("}")* ;
+
+ParameterDeclaration ::= @whenState(WithinContent)
+                         StartParameterDeclaration
+                         @pushState(WithinParameterDeclaration)
+                         ParameterContent
+                         EndParameterDeclaration
+                         @popState ;
+
+StartParameterDeclaration ::= @token(StartParameterDeclaration) "{@" ;
+EndParameterDeclaration   ::= @token(EndParameterDeclaration) "}" ;
+
+ParameterContent ::= @token(ParameterDeclaration)
+                    @recoverUntil("}")
+                    ("}")* ;
+
+Tag ::= AfterOpeningStartTag | AfterOpeningEndTag | WithinTag | WithinEndTag ;
+
+AfterOpeningStartTag ::= @whenState(AfterOpeningStartTag)
+                         StartTagOpen
+                         @pushState(WithinTag)
+                         TagName
+                         TagContent
+                         EndStartTag
+                         @popState ;
+
+StartTagOpen ::= @token(StartTagOpen) "{#" ;
+
+AfterOpeningEndTag ::= @whenState(AfterOpeningEndTag)
+                       EndTagOpen
+                       @pushState(WithinEndTag)
+                       TagName
+                       TagContentEnd
+                       EndEndTag
+                       @popState ;
+
+EndTagOpen ::= @token(EndTagOpen) "{/" ;
+
+WithinTag ::= @whenState(WithinTag)
+              TagContent
+              (StartTagSelfClose | StartTagClose)
+              @popState ;
+
+TagContent ::= (Whitespace | ParameterTag)* ;
+
+ParameterTag ::= @token(ParameterTag)
+                 @recoverUntil("}" | "/}" | whitespace)
+                 ;
+
+StartTagSelfClose ::= @token(StartTagSelfClose) "/}" ;
+StartTagClose     ::= @token(StartTagClose) "}" ;
+
+WithinEndTag ::= @whenState(WithinEndTag)
+                 (Whitespace)*
+                 EndTagClose
+                 @popState ;
+
+Whitespace ::= @token(Whitespace) " " | "\t" | "\n" | "\r" ;
+
+EndTagClose ::= @token(EndTagClose) "}" ;
+
+Text ::= @whenState(WithinContent)
+         @token(Content)
+         @recoverUntil("{");
