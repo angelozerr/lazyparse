@@ -1,0 +1,12 @@
+package io.lazyparse.generated;
+
+public class GeneratedParser {
+
+    public void parse() {
+        // Règles extraites de la BNF:
+        {#for rule in rules}
+        // - {rule}
+        {/for}
+        // TODO: générer le vrai parser ici
+    }
+}

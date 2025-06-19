@@ -1,0 +1,26 @@
+Template        ::= (Text | Expression | Section | Comment)*
+
+# Pour simplifier, on décompose la négation complexe en une règle séparée
+Text            ::= @recoverUntil(OpenTag)
+OpenTag         ::= "{{" | "{#" | "{/" | "{!"
+
+Expression      ::= @lazy "{" ExpressionBody "}"
+ExpressionBody  ::= Identifier ('.' Identifier)* ( "(" Arguments? ")" )?
+
+Arguments       ::= Expression ("," Expression)*
+
+Section         ::= SectionStart @recoverUntil(SectionEnd) LazySectionContent SectionEnd
+LazySectionContent ::= @lazy Template
+
+SectionStart    ::= "{#" Identifier SectionStartRest* "}"
+SectionStartRest ::= Identifier | String | Expression
+
+SectionEnd      ::= "{/" Identifier "}"
+
+Comment         ::= @recoverUntil("!}") "{!" "!}" "!}"
+
+# Identifier : lettres, chiffres, underscore, commençant par lettre ou underscore
+Identifier      ::= "foo"*
+
+# String : chaîne entre guillemets doubles, sans gestion d’échappement ici
+String          ::= '"' ('"')* '"'
